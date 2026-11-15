@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BOND仕入れ">
 <meta name="theme-color" content="#2b2622">
@@ -10,32 +10,32 @@
 <style>
   :root { --bg:#f6f3ee; --card:#fff; --ink:#2b2622; --sub:#7a7067; --accent:#8a5a2b; --line:#e3ddd4; --ok:#2e7d4f; --ng:#b3382c; }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink); font-size:15px; padding-bottom:calc(70px + env(safe-area-inset-bottom)); }
+  body { margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink); font-size:13px; padding-bottom:calc(70px + env(safe-area-inset-bottom)); }
   header { background:var(--ink); color:#fff; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top)); font-weight:700; letter-spacing:.05em; }
   main { max-width:860px; margin:0 auto; padding:12px; }
   nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:#fff; border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:10; }
-  nav button { flex:1; border:0; background:none; padding:10px 0 12px; font-size:13px; color:var(--sub); }
+  nav button { flex:1; border:0; background:none; padding:10px 0 12px; font-size:12px; color:var(--sub); }
   nav button.on { color:var(--accent); font-weight:700; }
   section.tab { display:none; } section.tab.on { display:block; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:12px; }
-  h2 { font-size:16px; margin:0 0 8px; } h3 { font-size:14px; margin:12px 0 6px; color:var(--sub); }
-  label { display:block; font-size:12px; color:var(--sub); margin:8px 0 2px; }
-  input, select, textarea { width:100%; font-size:16px; padding:8px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); font-family:inherit; }
+  h2 { font-size:14px; margin:0 0 8px; } h3 { font-size:12px; margin:12px 0 6px; color:var(--sub); }
+  label { display:block; font-size:11px; color:var(--sub); margin:8px 0 2px; }
+  input, select, textarea { width:100%; font-size:14px; padding:7px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); font-family:inherit; }
   textarea { min-height:90px; }
   .row { display:flex; gap:8px; } .row > * { flex:1; min-width:0; }
-  button.btn { border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:6px; padding:8px 12px; font-size:14px; cursor:pointer; }
+  button.btn { border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:6px; padding:7px 12px; font-size:13px; cursor:pointer; }
   button.btn.ghost { background:#fff; color:var(--accent); }
-  button.btn.small { padding:4px 8px; font-size:12px; }
+  button.btn.small { padding:4px 8px; font-size:11px; }
   button.btn.danger { border-color:var(--ng); background:#fff; color:var(--ng); }
   .btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-  a.site { display:inline-block; padding:6px 10px; border-radius:16px; background:#efe7dc; color:var(--ink); text-decoration:none; font-size:13px; }
+  a.site { display:inline-block; padding:6px 10px; border-radius:16px; background:#efe7dc; color:var(--ink); text-decoration:none; font-size:12px; }
   a.site.en { background:#e2e9ef; }
   .q { border-top:1px dashed var(--line); padding:8px 0; } .q:first-child { border-top:0; }
-  .q .terms { font-weight:600; } .q .note { font-size:12px; color:var(--sub); }
-  .muted { color:var(--sub); font-size:12px; }
-  .chips label { display:inline-flex; align-items:center; gap:4px; margin:4px 10px 4px 0; color:var(--ink); font-size:14px; }
+  .q .terms { font-weight:600; } .q .note { font-size:11px; color:var(--sub); }
+  .muted { color:var(--sub); font-size:11px; }
+  .chips label { display:inline-flex; align-items:center; gap:4px; margin:4px 10px 4px 0; color:var(--ink); font-size:12px; }
   .chips input { width:auto; }
-  .item-info div { margin:2px 0; } .item-info b { color:var(--sub); font-weight:400; font-size:12px; margin-right:6px; }
+  .item-info div { margin:2px 0; } .item-info b { color:var(--sub); font-weight:400; font-size:11px; margin-right:6px; }
   .cand .top { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
   .cand .title { font-weight:700; word-break:break-all; }
   .badge { font-size:11px; padding:2px 8px; border-radius:10px; background:#eee; white-space:nowrap; }
@@ -45,6 +45,17 @@
   .toast.on { opacity:.92; }
   .saved-item { display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px dashed var(--line); padding:8px 0; }
   .saved-item:first-child { border-top:0; }
+  .results { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+  .res { border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; display:flex; flex-direction:column; }
+  .res .img { aspect-ratio:1; background:#eee center/cover no-repeat; display:block; }
+  .res .img img { width:100%; height:100%; object-fit:cover; display:block; }
+  .res .body { padding:6px 8px 8px; display:flex; flex-direction:column; gap:3px; flex:1; }
+  .res .t { font-size:12px; font-weight:600; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .res .pr { font-weight:700; } .res .why { font-size:11px; color:var(--accent); }
+  .res .btns { margin-top:auto; padding-top:4px; }
+  .res-filter { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+  .res-filter button { border:1px solid var(--line); background:#fff; border-radius:12px; padding:3px 9px; font-size:11px; color:var(--sub); }
+  .res-filter button.on { border-color:var(--accent); color:var(--accent); font-weight:700; }
 </style>
 </head>
 <body>
@@ -67,6 +78,13 @@
     <div class="btns"><button class="btn ghost small" id="itemToCand">このアイテムを候補に追加</button></div>
   </div>
 
+  <div class="card" id="resCard" hidden>
+    <h2>検索結果（AIが選んだ似ている商品）</h2>
+    <p class="muted" id="resMeta"></p>
+    <div class="res-filter" id="resFilter"></div>
+    <div class="results" id="resList"></div>
+  </div>
+
   <div class="card">
     <h2>② 検索条件</h2>
     <div class="row">
@@ -86,6 +104,7 @@
     </div>
     <div class="btns"><button class="btn" id="addManual">ワードを追加</button></div>
     <h3>判別ワード</h3><div id="kwList"><p class="muted">まだありません</p></div>
+    <h3>デザインで探す（ブランド名なし）</h3><div id="desList"><p class="muted">まだありません</p></div>
     <h3>似ているアイテムの提案</h3><div id="simList"><p class="muted">まだありません</p></div>
     <h3>手入力ワード</h3><div id="manList"><p class="muted">まだありません</p></div>
     <h3>画像そのもので探す</h3>
@@ -187,8 +206,9 @@ const SITES = [
 ];
 
 const AI_PROMPT = `【BOND仕入れ用】この画像のアイテムを判別して、仕入れアプリ用の取込コード（JSON）を出してください。
-形式：{"item":{"name":"","brand":"","category":"","era":"","details":"","checkpoints":""},"keywords":[{"ja":"","en":"","note":""}],"similar":[{"ja":"","en":"","note":""}]}
-keywords＝同じアイテムを探す検索語（3〜5個）、similar＝似通った狙い目アイテムの検索語（3〜5個）。`;
+形式：{"item":{"name":"","brand":"","category":"","era":"","details":"","checkpoints":""},"keywords":[{"ja":"","en":"","note":""}],"design":[{"ja":"","en":"","note":""}],"similar":[{"ja":"","en":"","note":""}],"results":[{"site":"","title":"","price":"","image":"","url":"","match":""}]}
+keywords＝同じアイテムを探す検索語、design＝ブランド名を入れずデザインの共通点だけで探す検索語、similar＝似通った狙い目アイテムの検索語（各3〜5個）。
+results＝各サイトを実際に検索し、デザインが似ている出品を選んだ一覧（画像URL・価格・リンク・似ている理由）。`;
 
 // ---------- data ----------
 function emptyData() { return { settings:{...DEFAULT_SETTINGS}, saved:[], candidates:[], deleted:{} }; }
@@ -262,7 +282,8 @@ document.querySelectorAll('nav button').forEach(b => b.addEventListener('click',
 }));
 
 // ---------- search ----------
-let session = { item:null, keywords:[], similar:[], manual:[] };
+let session = { item:null, keywords:[], design:[], similar:[], manual:[], results:[], resultsMeta:'' };
+let resSite = '';
 let enabledSites = new Set(JSON.parse(localStorage.getItem(STORE_KEY + '.sites') || 'null') || SITES.map(s => s.id));
 
 $('siteChips').innerHTML = SITES.map(s =>
@@ -292,6 +313,7 @@ function queryHtml(q, kind, i) {
 function renderQueries() {
   const box = (list, kind) => list.length ? list.map((q, i) => queryHtml(q, kind, i)).join('') : '<p class="muted">まだありません</p>';
   $('kwList').innerHTML = box(session.keywords, 'keywords');
+  $('desList').innerHTML = box(session.design, 'design');
   $('simList').innerHTML = box(session.similar, 'similar');
   $('manList').innerHTML = box(session.manual, 'manual');
 }
@@ -313,26 +335,73 @@ function parseImport(text) {
   const clean = arr => (Array.isArray(arr) ? arr : [])
     .map(q => typeof q === 'string' ? { ja:q, en:'', note:'' } : { ja:String(q.ja || ''), en:String(q.en || ''), note:String(q.note || '') })
     .filter(q => q.ja || q.en);
-  const res = { item: d.item && typeof d.item === 'object' ? d.item : null, keywords: clean(d.keywords), similar: clean(d.similar) };
-  if (!res.item && !res.keywords.length && !res.similar.length) throw new Error('取り込める項目がありません');
+  const str = v => v == null ? '' : String(v);
+  const res = {};
+  if (d.item && typeof d.item === 'object') res.item = d.item;
+  for (const k of ['keywords', 'design', 'similar']) if (Array.isArray(d[k])) res[k] = clean(d[k]);
+  if (Array.isArray(d.results)) {
+    res.results = d.results.filter(r => r && typeof r === 'object').map(r => ({
+      site:str(r.site), title:str(r.title), price:str(r.price), image:safeUrl(str(r.image)), url:safeUrl(str(r.url)), match:str(r.match),
+    })).filter(r => r.title || r.url);
+    res.resultsMeta = str(d.resultsMeta || d.searchedAt);
+  }
+  if (!Object.keys(res).length) throw new Error('取り込める項目がありません');
   return res;
 }
+function renderItem() {
+  const labels = { name:'名称', brand:'ブランド', category:'カテゴリ', era:'年代', details:'特徴', checkpoints:'確認ポイント' };
+  $('itemInfo').innerHTML = session.item ? Object.entries(session.item).filter(([, v]) => v)
+    .map(([k, v]) => `<div><b>${esc(labels[k] || k)}</b>${esc(v)}</div>`).join('') : '';
+  $('itemCard').hidden = !session.item;
+}
+function renderResults() {
+  const list = session.results;
+  $('resCard').hidden = !list.length;
+  if (!list.length) return;
+  const sites = [...new Set(list.map(r => r.site).filter(Boolean))];
+  if (resSite && !sites.includes(resSite)) resSite = '';
+  $('resFilter').innerHTML = [['', `すべて(${list.length})`], ...sites.map(s => [s, `${s}(${list.filter(r => r.site === s).length})`])]
+    .map(([v, l]) => `<button data-rs="${esc(v)}" class="${v === resSite ? 'on' : ''}">${esc(l)}</button>`).join('');
+  $('resMeta').textContent = session.resultsMeta || '画像をタップすると商品ページが開きます';
+  $('resList').innerHTML = list.map((r, i) => (resSite && r.site !== resSite) ? '' : `
+    <div class="res">
+      ${r.url ? `<a class="img" href="${esc(r.url)}" target="_blank" rel="noopener">` : '<div class="img">'}
+      ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+      ${r.url ? '</a>' : '</div>'}
+      <div class="body">
+        <div class="muted">${esc(r.site)}</div>
+        <div class="t">${esc(r.title)}</div>
+        ${r.price ? `<div class="pr">${esc(r.price)}</div>` : ''}
+        ${r.match ? `<div class="why">${esc(r.match)}</div>` : ''}
+        <div class="btns"><button class="btn ghost small" data-rcand="${i}">候補に追加</button></div>
+      </div>
+    </div>`).join('');
+}
+$('resFilter').addEventListener('click', ev => { if (ev.target.dataset.rs !== undefined) { resSite = ev.target.dataset.rs; renderResults(); } });
+$('resList').addEventListener('click', ev => {
+  const i = ev.target.dataset.rcand; if (i === undefined) return;
+  const r = session.results[+i];
+  resetCandForm();
+  $('cTitle').value = r.title; $('cUrl').value = r.url;
+  const site = [...$('cSite').options].find(o => o.value === r.site);
+  $('cSite').value = site ? site.value : 'その他';
+  if (/^[¥￥]?\s*[\d,]+\s*円?$/.test(r.price.trim())) $('cPrice').value = r.price.replace(/[^\d]/g, '');
+  $('cMemo').value = [r.price && !$('cPrice').value ? '出品価格：' + r.price : '', r.match].filter(Boolean).join('\n');
+  updateCalc();
+  document.querySelector('nav button[data-tab="cand"]').click();
+});
 $('doImport').addEventListener('click', () => {
   try {
     const r = parseImport($('importCode').value);
     session = { ...session, ...r };
-    const labels = { name:'名称', brand:'ブランド', category:'カテゴリ', era:'年代', details:'特徴', checkpoints:'確認ポイント' };
-    $('itemInfo').innerHTML = r.item ? Object.entries(r.item).filter(([, v]) => v)
-      .map(([k, v]) => `<div><b>${esc(labels[k] || k)}</b>${esc(v)}</div>`).join('') : '<p class="muted">アイテム情報なし</p>';
-    $('itemCard').hidden = false;
-    renderQueries(); toast('取り込みました');
+    renderItem(); renderQueries(); renderResults();
+    toast(r.results ? `取り込みました（結果${r.results.length}件）` : '取り込みました');
   } catch (err) { toast('取り込み失敗：' + err.message); }
 });
 $('clearImport').addEventListener('click', () => {
-  $('importCode').value = ''; session = { ...session, item:null, keywords:[], similar:[] };
-  $('itemCard').hidden = true; renderQueries();
-});
-$('copyPrompt').addEventListener('click', async () => toast(await copyText(AI_PROMPT) ? '依頼文をコピーしました' : 'コピーできませんでした'));
+  $('importCode').value = ''; session = { ...session, item:null, keywords:[], design:[], similar:[], results:[], resultsMeta:'' };
+  renderItem(); renderQueries(); renderResults();
+});$('copyPrompt').addEventListener('click', async () => toast(await copyText(AI_PROMPT) ? '依頼文をコピーしました' : 'コピーできませんでした'));
 $('addManual').addEventListener('click', () => {
   const ja = $('manJa').value.trim(), en = $('manEn').value.trim();
   if (!ja && !en) return toast('ワードを入力してください');

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BOND仕入れ">
+<meta name="theme-color" content="#2b2622">
+<title>BOND 仕入れ</title>
+<style>
+  :root { --bg:#f6f3ee; --card:#fff; --ink:#2b2622; --sub:#7a7067; --accent:#8a5a2b; --line:#e3ddd4; --ok:#2e7d4f; --ng:#b3382c; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink); font-size:15px; padding-bottom:calc(70px + env(safe-area-inset-bottom)); }
+  header { background:var(--ink); color:#fff; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top)); font-weight:700; letter-spacing:.05em; }
+  main { max-width:860px; margin:0 auto; padding:12px; }
+  nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:#fff; border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:10; }
+  nav button { flex:1; border:0; background:none; padding:10px 0 12px; font-size:13px; color:var(--sub); }
+  nav button.on { color:var(--accent); font-weight:700; }
+  section.tab { display:none; } section.tab.on { display:block; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:12px; }
+  h2 { font-size:16px; margin:0 0 8px; } h3 { font-size:14px; margin:12px 0 6px; color:var(--sub); }
+  label { display:block; font-size:12px; color:var(--sub); margin:8px 0 2px; }
+  input, select, textarea { width:100%; font-size:16px; padding:8px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); font-family:inherit; }
+  textarea { min-height:90px; }
+  .row { display:flex; gap:8px; } .row > * { flex:1; min-width:0; }
+  button.btn { border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:6px; padding:8px 12px; font-size:14px; cursor:pointer; }
+  button.btn.ghost { background:#fff; color:var(--accent); }
+  button.btn.small { padding:4px 8px; font-size:12px; }
+  button.btn.danger { border-color:var(--ng); background:#fff; color:var(--ng); }
+  .btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  a.site { display:inline-block; padding:6px 10px; border-radius:16px; background:#efe7dc; color:var(--ink); text-decoration:none; font-size:13px; }
+  a.site.en { background:#e2e9ef; }
+  .q { border-top:1px dashed var(--line); padding:8px 0; } .q:first-child { border-top:0; }
+  .q .terms { font-weight:600; } .q .note { font-size:12px; color:var(--sub); }
+  .muted { color:var(--sub); font-size:12px; }
+  .chips label { display:inline-flex; align-items:center; gap:4px; margin:4px 10px 4px 0; color:var(--ink); font-size:14px; }
+  .chips input { width:auto; }
+  .item-info div { margin:2px 0; } .item-info b { color:var(--sub); font-weight:400; font-size:12px; margin-right:6px; }
+  .cand .top { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+  .cand .title { font-weight:700; word-break:break-all; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:10px; background:#eee; white-space:nowrap; }
+  .badge.検討中 { background:#fff3d6; } .badge.購入済 { background:#dcf1e3; } .badge.見送り { background:#eee; color:#888; }
+  .profit { font-weight:700; } .profit.plus { color:var(--ok); } .profit.minus { color:var(--ng); }
+  .toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:20; }
+  .toast.on { opacity:.92; }
+  .saved-item { display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px dashed var(--line); padding:8px 0; }
+  .saved-item:first-child { border-top:0; }
+</style>
+</head>
+<body>
+<header>BOND Vintage ｜ 仕入れ</header>
+<main>
+
+<!-- 検索 -->
+<section class="tab on" id="tab-search">
+  <div class="card">
+    <h2>① 画像の判別結果を取り込む</h2>
+    <p class="muted">チャットに商品画像を送り、返ってきた「取込コード」を貼り付けてください。</p>
+    <div class="btns" style="margin-top:0"><button class="btn ghost small" id="copyPrompt">AIへの依頼文をコピー</button></div>
+    <textarea id="importCode" placeholder='{"item":{...},"keywords":[...],"similar":[...]}'></textarea>
+    <div class="btns"><button class="btn" id="doImport">取り込む</button><button class="btn ghost" id="clearImport">クリア</button></div>
+  </div>
+
+  <div class="card" id="itemCard" hidden>
+    <h2>判別結果</h2>
+    <div class="item-info" id="itemInfo"></div>
+    <div class="btns"><button class="btn ghost small" id="itemToCand">このアイテムを候補に追加</button></div>
+  </div>
+
+  <div class="card">
+    <h2>② 検索条件</h2>
+    <div class="row">
+      <div><label>最低価格（円）</label><input type="number" id="pMin" inputmode="numeric" placeholder="指定なし"></div>
+      <div><label>最高価格（円）</label><input type="number" id="pMax" inputmode="numeric" placeholder="指定なし"></div>
+    </div>
+    <p class="muted">価格指定は国内サイト（メルカリ・ヤフオク・Yahoo!フリマ・ラクマ）のみに反映されます。</p>
+    <label>検索するサイト</label>
+    <div class="chips" id="siteChips"></div>
+  </div>
+
+  <div class="card">
+    <h2>③ 検索ワード</h2>
+    <div class="row">
+      <div><label>日本語ワード</label><input id="manJa" placeholder="例：リーバイス 501 66前期"></div>
+      <div><label>英語ワード</label><input id="manEn" placeholder="例：Levi's 501 66 early"></div>
+    </div>
+    <div class="btns"><button class="btn" id="addManual">ワードを追加</button></div>
+    <h3>判別ワード</h3><div id="kwList"><p class="muted">まだありません</p></div>
+    <h3>似ているアイテムの提案</h3><div id="simList"><p class="muted">まだありません</p></div>
+    <h3>手入力ワード</h3><div id="manList"><p class="muted">まだありません</p></div>
+    <h3>画像そのもので探す</h3>
+    <div class="btns"><a class="site en" href="https://lens.google.com/" target="_blank" rel="noopener">Googleレンズを開く</a></div>
+  </div>
+</section>
+
+<!-- 保存ワード -->
+<section class="tab" id="tab-saved">
+  <div class="card">
+    <h2>保存した検索ワード</h2>
+    <p class="muted">タップすると検索リンクが出ます。</p>
+    <div id="savedList"></div>
+  </div>
+</section>
+
+<!-- 候補 -->
+<section class="tab" id="tab-cand">
+  <div class="card">
+    <h2 id="candFormTitle">候補を追加</h2>
+    <input type="hidden" id="cId">
+    <label>商品名</label><input id="cTitle" placeholder="例：Levi's 501 66前期 W32">
+    <div class="row">
+      <div><label>サイト</label><select id="cSite"></select></div>
+      <div><label>状態</label><select id="cStatus"><option>検討中</option><option>購入済</option><option>見送り</option></select></div>
+    </div>
+    <label>URL</label><input id="cUrl" type="url" placeholder="https://...">
+    <div class="row">
+      <div><label>仕入れ値（円）</label><input id="cPrice" type="number" inputmode="numeric"></div>
+      <div><label>仕入れ送料（円）</label><input id="cShipIn" type="number" inputmode="numeric"></div>
+    </div>
+    <div class="row">
+      <div><label>想定販売価格（円）</label><input id="cSale" type="number" inputmode="numeric"></div>
+      <div><label>販売時送料（円）</label><input id="cShipOut" type="number" inputmode="numeric"></div>
+    </div>
+    <div class="muted" id="cCalc" style="margin-top:8px"></div>
+    <label>メモ</label><textarea id="cMemo" style="min-height:60px"></textarea>
+    <div class="btns"><button class="btn" id="cSave">保存</button><button class="btn ghost" id="cReset">クリア</button></div>
+  </div>
+  <div class="card">
+    <div class="row" style="align-items:center"><h2 style="margin:0">候補リスト</h2>
+      <select id="cFilter" style="max-width:140px"><option value="">すべて</option><option>検討中</option><option>購入済</option><option>見送り</option></select></div>
+    <div class="muted" id="candSummary" style="margin-top:6px"></div>
+    <div id="candList"></div>
+  </div>
+</section>
+
+<!-- 設定・共有 -->
+<section class="tab" id="tab-settings">
+  <div class="card">
+    <h2>利益計算の設定</h2>
+    <p class="muted">初期値：BASE（決済手数料3.6%＋40円、サービス利用料3%）。利益＝販売価格−手数料−販売時送料−仕入れ値−仕入れ送料。</p>
+    <div class="row">
+      <div><label>手数料率（%）</label><input id="sRate" type="number" step="0.1" inputmode="decimal"></div>
+      <div><label>固定手数料（円）</label><input id="sFixed" type="number" inputmode="numeric"></div>
+    </div>
+    <label>販売時送料の初期値（円）</label><input id="sShip" type="number" inputmode="numeric">
+    <div class="btns"><button class="btn" id="sSave">設定を保存</button><button class="btn ghost" id="sDefault">初期値に戻す</button></div>
+  </div>
+  <div class="card">
+    <h2>奥様との共有（書き出し／読み込み）</h2>
+    <p class="muted">書き出したファイルをOneDriveなどで渡し、相手の端末で読み込みます。「統合」を選ぶと、同じ項目は更新日時が新しいほうが残ります。</p>
+    <div class="btns"><button class="btn" id="exportBtn">ファイルに書き出す</button></div>
+    <label>読み込み方法</label>
+    <select id="importMode"><option value="merge">統合（おすすめ）</option><option value="replace">置き換え（今のデータは消えます）</option></select>
+    <label>ファイルを選択</label><input type="file" id="importFile" accept=".json,application/json">
+  </div>
+  <div class="card"><p class="muted">データはこの端末のブラウザ内だけに保存されます。ブラウザのデータを消去すると消えるので、定期的に書き出してください。</p></div>
+</section>
+
+</main>
+
+<nav>
+  <button data-tab="search" class="on">検索</button>
+  <button data-tab="saved">保存ワード</button>
+  <button data-tab="cand">候補</button>
+  <button data-tab="settings">設定・共有</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const STORE_KEY = 'bondShiire.v1';
+const DEFAULT_SETTINGS = { rate: 6.6, fixed: 40, ship: 0 };
+
+const e = encodeURIComponent;
+const qs = (min, max, kMin, kMax) =>
+  (min ? `&${kMin}=${e(min)}` : '') + (max ? `&${kMax}=${e(max)}` : '');
+const SITES = [
+  { id:'mercari', name:'メルカリ', lang:'ja', url:(q,a,b)=>`https://jp.mercari.com/search?keyword=${e(q)}&status=on_sale${qs(a,b,'price_min','price_max')}` },
+  { id:'yauc', name:'ヤフオク', lang:'ja', url:(q,a,b)=>`https://auctions.yahoo.co.jp/search/search?p=${e(q)}${qs(a,b,'aucminprice','aucmaxprice')}` },
+  { id:'yflea', name:'Yahoo!フリマ', lang:'ja', url:(q,a,b)=>`https://paypayfleamarket.yahoo.co.jp/search/${e(q)}?open=1${qs(a,b,'minPrice','maxPrice')}` },
+  { id:'rakuma', name:'ラクマ', lang:'ja', url:(q,a,b)=>`https://fril.jp/s?query=${e(q)}${qs(a,b,'min','max')}` },
+  { id:'google', name:'Google', lang:'ja', url:q=>`https://www.google.com/search?q=${e(q)}` },
+  { id:'ebay', name:'eBay', lang:'en', url:q=>`https://www.ebay.com/sch/i.html?_nkw=${e(q)}` },
+  { id:'depop', name:'Depop', lang:'en', url:q=>`https://www.depop.com/search/?q=${e(q)}` },
+  { id:'vinted', name:'Vinted', lang:'en', url:q=>`https://www.vinted.com/catalog?search_text=${e(q)}` },
+  { id:'grailed', name:'Grailed', lang:'en', url:q=>`https://www.grailed.com/shop?query=${e(q)}` },
+];
+
+const AI_PROMPT = `【BOND仕入れ用】この画像のアイテムを判別して、仕入れアプリ用の取込コード（JSON）を出してください。
+形式：{"item":{"name":"","brand":"","category":"","era":"","details":"","checkpoints":""},"keywords":[{"ja":"","en":"","note":""}],"similar":[{"ja":"","en":"","note":""}]}
+keywords＝同じアイテムを探す検索語（3〜5個）、similar＝似通った狙い目アイテムの検索語（3〜5個）。`;
+
+// ---------- data ----------
+function emptyData() { return { settings:{...DEFAULT_SETTINGS}, saved:[], candidates:[], deleted:{} }; }
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (d && typeof d === 'object') return normalize(d);
+  } catch (_) {}
+  return emptyData();
+}
+function normalize(d) {
+  const base = emptyData();
+  return {
+    settings: { ...base.settings, ...(d.settings || {}) },
+    saved: Array.isArray(d.saved) ? d.saved : [],
+    candidates: Array.isArray(d.candidates) ? d.candidates : [],
+    deleted: d.deleted && typeof d.deleted === 'object' ? d.deleted : {},
+  };
+}
+let data = load();
+function persist() { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const now = () => new Date().toISOString();
+
+// Merge by id; the newer updatedAt wins, and deletions (tombstones) propagate.
+function mergeData(local, incoming) {
+  const a = normalize(local), b = normalize(incoming);
+  const deleted = { ...a.deleted };
+  for (const [id, t] of Object.entries(b.deleted)) if (!deleted[id] || deleted[id] < t) deleted[id] = t;
+  const mergeList = (x, y) => {
+    const map = new Map();
+    for (const it of [...x, ...y]) {
+      if (!it || !it.id) continue;
+      const cur = map.get(it.id);
+      if (!cur || (it.updatedAt || '') > (cur.updatedAt || '')) map.set(it.id, it);
+    }
+    return [...map.values()].filter(it => !deleted[it.id] || deleted[it.id] < (it.updatedAt || ''));
+  };
+  return { settings: a.settings, saved: mergeList(a.saved, b.saved), candidates: mergeList(a.candidates, b.candidates), deleted };
+}
+
+function calcProfit(c, s) {
+  const sale = Number(c.sale) || 0;
+  if (!sale) return null;
+  const fee = Math.round(sale * (Number(s.rate) || 0) / 100) + (Number(s.fixed) || 0);
+  const cost = (Number(c.price) || 0) + (Number(c.shipIn) || 0) + (Number(c.shipOut) || 0);
+  const profit = sale - fee - cost;
+  return { fee, profit, margin: profit / sale * 100 };
+}
+
+// ---------- ui helpers ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen = n => '¥' + Math.round(n).toLocaleString('ja-JP');
+const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 1800); }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (_) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy'); ta.remove(); return ok;
+  }
+}
+
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('on', s.id === 'tab-' + b.dataset.tab));
+  if (b.dataset.tab === 'saved') renderSaved();
+  if (b.dataset.tab === 'cand') renderCands();
+  window.scrollTo(0, 0);
+}));
+
+// ---------- search ----------
+let session = { item:null, keywords:[], similar:[], manual:[] };
+let enabledSites = new Set(JSON.parse(localStorage.getItem(STORE_KEY + '.sites') || 'null') || SITES.map(s => s.id));
+
+$('siteChips').innerHTML = SITES.map(s =>
+  `<label><input type="checkbox" value="${s.id}" ${enabledSites.has(s.id) ? 'checked' : ''}>${s.name}</label>`).join('');
+$('siteChips').addEventListener('change', ev => {
+  ev.target.checked ? enabledSites.add(ev.target.value) : enabledSites.delete(ev.target.value);
+  localStorage.setItem(STORE_KEY + '.sites', JSON.stringify([...enabledSites]));
+  renderQueries();
+});
+['pMin','pMax'].forEach(id => $(id).addEventListener('input', renderQueries));
+
+function linksFor(q) {
+  const min = $('pMin').value, max = $('pMax').value;
+  return SITES.filter(s => enabledSites.has(s.id)).map(s => {
+    const term = (s.lang === 'en' ? (q.en || q.ja) : (q.ja || q.en)) || '';
+    if (!term.trim()) return '';
+    return `<a class="site ${s.lang}" href="${esc(s.url(term.trim(), min, max))}" target="_blank" rel="noopener">${s.name}</a>`;
+  }).join('');
+}
+function queryHtml(q, kind, i) {
+  const terms = [q.ja, q.en].filter(Boolean).map(esc).join(' ／ ');
+  return `<div class="q"><div class="terms">${terms}</div>${q.note ? `<div class="note">${esc(q.note)}</div>` : ''}
+    <div class="btns">${linksFor(q)}</div>
+    <div class="btns"><button class="btn ghost small" data-save="${kind}:${i}">ワードを保存</button>
+    ${kind === 'manual' ? `<button class="btn danger small" data-del="${i}">削除</button>` : ''}</div></div>`;
+}
+function renderQueries() {
+  const box = (list, kind) => list.length ? list.map((q, i) => queryHtml(q, kind, i)).join('') : '<p class="muted">まだありません</p>';
+  $('kwList').innerHTML = box(session.keywords, 'keywords');
+  $('simList').innerHTML = box(session.similar, 'similar');
+  $('manList').innerHTML = box(session.manual, 'manual');
+}
+document.querySelector('#tab-search').addEventListener('click', ev => {
+  const s = ev.target.dataset.save, d = ev.target.dataset.del;
+  if (s) {
+    const [kind, i] = s.split(':'); const q = session[kind][+i];
+    if (data.saved.some(x => x.ja === (q.ja || '') && x.en === (q.en || ''))) return toast('保存済みです');
+    data.saved.unshift({ id: uid(), ja: q.ja || '', en: q.en || '', note: q.note || '', updatedAt: now() });
+    persist(); toast('保存しました');
+  }
+  if (d !== undefined) { session.manual.splice(+d, 1); renderQueries(); }
+});
+
+function parseImport(text) {
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('JSONが見つかりません');
+  const d = JSON.parse(m[0]);
+  const clean = arr => (Array.isArray(arr) ? arr : [])
+    .map(q => typeof q === 'string' ? { ja:q, en:'', note:'' } : { ja:String(q.ja || ''), en:String(q.en || ''), note:String(q.note || '') })
+    .filter(q => q.ja || q.en);
+  const res = { item: d.item && typeof d.item === 'object' ? d.item : null, keywords: clean(d.keywords), similar: clean(d.similar) };
+  if (!res.item && !res.keywords.length && !res.similar.length) throw new Error('取り込める項目がありません');
+  return res;
+}
+$('doImport').addEventListener('click', () => {
+  try {
+    const r = parseImport($('importCode').value);
+    session = { ...session, ...r };
+    const labels = { name:'名称', brand:'ブランド', category:'カテゴリ', era:'年代', details:'特徴', checkpoints:'確認ポイント' };
+    $('itemInfo').innerHTML = r.item ? Object.entries(r.item).filter(([, v]) => v)
+      .map(([k, v]) => `<div><b>${esc(labels[k] || k)}</b>${esc(v)}</div>`).join('') : '<p class="muted">アイテム情報なし</p>';
+    $('itemCard').hidden = false;
+    renderQueries(); toast('取り込みました');
+  } catch (err) { toast('取り込み失敗：' + err.message); }
+});
+$('clearImport').addEventListener('click', () => {
+  $('importCode').value = ''; session = { ...session, item:null, keywords:[], similar:[] };
+  $('itemCard').hidden = true; renderQueries();
+});
+$('copyPrompt').addEventListener('click', async () => toast(await copyText(AI_PROMPT) ? '依頼文をコピーしました' : 'コピーできませんでした'));
+$('addManual').addEventListener('click', () => {
+  const ja = $('manJa').value.trim(), en = $('manEn').value.trim();
+  if (!ja && !en) return toast('ワードを入力してください');
+  session.manual.unshift({ ja, en, note:'' }); $('manJa').value = ''; $('manEn').value = ''; renderQueries();
+});
+$('itemToCand').addEventListener('click', () => {
+  const it = session.item || {};
+  resetCandForm();
+  $('cTitle').value = it.name || [it.brand, it.category, it.era].filter(Boolean).join(' ');
+  $('cMemo').value = it.checkpoints ? '確認：' + it.checkpoints : '';
+  document.querySelector('nav button[data-tab="cand"]').click();
+});
+
+// ---------- saved words ----------
+function renderSaved() {
+  $('savedList').innerHTML = data.saved.length ? data.saved.map(q => `
+    <div class="saved-item"><div style="flex:1;min-width:0">
+      <div class="terms" style="font-weight:600">${[q.ja, q.en].filter(Boolean).map(esc).join(' ／ ')}</div>
+      ${q.note ? `<div class="muted">${esc(q.note)}</div>` : ''}
+      <div class="btns" data-links="${q.id}" hidden></div></div>
+      <div><button class="btn ghost small" data-open="${q.id}">検索</button>
+      <button class="btn danger small" data-rm="${q.id}">削除</button></div></div>`).join('')
+    : '<p class="muted">保存したワードはまだありません</p>';
+}
+$('savedList').addEventListener('click', ev => {
+  const o = ev.target.dataset.open, r = ev.target.dataset.rm;
+  if (o) {
+    const box = $('savedList').querySelector(`[data-links="${o}"]`);
+    box.innerHTML = linksFor(data.saved.find(x => x.id === o)); box.hidden = !box.hidden;
+  }
+  if (r && confirm('このワードを削除しますか？')) {
+    data.saved = data.saved.filter(x => x.id !== r); data.deleted[r] = now(); persist(); renderSaved();
+  }
+});
+
+// ---------- candidates ----------
+$('cSite').innerHTML = [...SITES.filter(s => s.id !== 'google').map(s => s.name), 'その他'].map(n => `<option>${n}</option>`).join('');
+const candFields = { title:'cTitle', site:'cSite', status:'cStatus', url:'cUrl', price:'cPrice', shipIn:'cShipIn', sale:'cSale', shipOut:'cShipOut', memo:'cMemo' };
+function readCandForm() { const c = {}; for (const [k, id] of Object.entries(candFields)) c[k] = $(id).value.trim(); return c; }
+function updateCalc() {
+  const r = calcProfit(readCandForm(), data.settings);
+  $('cCalc').innerHTML = r ? `手数料 ${yen(r.fee)} ／ 利益 <span class="profit ${r.profit >= 0 ? 'plus' : 'minus'}">${yen(r.profit)}</span>（利益率 ${r.margin.toFixed(1)}%）`
+    : '想定販売価格を入れると利益を計算します';
+}
+Object.values(candFields).forEach(id => $(id).addEventListener('input', updateCalc));
+function resetCandForm() {
+  Object.values(candFields).forEach(id => { $(id).value = ''; });
+  $('cId').value = ''; $('cSite').selectedIndex = 0; $('cStatus').value = '検討中';
+  $('cShipOut').value = data.settings.ship || '';
+  $('candFormTitle').textContent = '候補を追加'; updateCalc();
+}
+$('cReset').addEventListener('click', resetCandForm);
+$('cSave').addEventListener('click', () => {
+  const c = readCandForm();
+  if (!c.title && !c.url) return toast('商品名かURLを入力してください');
+  if (c.url && !safeUrl(c.url)) return toast('URLは http(s):// で始めてください');
+  const id = $('cId').value;
+  if (id) {
+    const i = data.candidates.findIndex(x => x.id === id);
+    data.candidates[i] = { ...data.candidates[i], ...c, updatedAt: now() };
+  } else {
+    data.candidates.unshift({ id: uid(), ...c, createdAt: now(), updatedAt: now() });
+  }
+  persist(); resetCandForm(); renderCands(); toast('保存しました');
+});
+$('cFilter').addEventListener('change', renderCands);
+function renderCands() {
+  const f = $('cFilter').value;
+  const list = data.candidates.filter(c => !f || c.status === f);
+  let sum = 0, cnt = 0;
+  $('candList').innerHTML = list.length ? list.map(c => {
+    const r = calcProfit(c, data.settings); if (r) { sum += r.profit; cnt++; }
+    const u = safeUrl(c.url);
+    return `<div class="q cand"><div class="top"><div class="title">${esc(c.title || '(無題)')}</div><span class="badge ${esc(c.status)}">${esc(c.status)}</span></div>
+      <div class="muted">${esc(c.site)}${c.price ? ' ／ 仕入れ ' + yen(c.price) : ''}${c.sale ? ' ／ 販売想定 ' + yen(c.sale) : ''} ／ ${esc((c.updatedAt || '').slice(0, 10))}</div>
+      ${r ? `<div>利益 <span class="profit ${r.profit >= 0 ? 'plus' : 'minus'}">${yen(r.profit)}</span> <span class="muted">（${r.margin.toFixed(1)}%）</span></div>` : ''}
+      ${c.memo ? `<div class="muted" style="white-space:pre-wrap">${esc(c.memo)}</div>` : ''}
+      <div class="btns">${u ? `<a class="site" href="${esc(u)}" target="_blank" rel="noopener">商品ページ</a>` : ''}
+      <button class="btn ghost small" data-edit="${c.id}">編集</button><button class="btn danger small" data-cdel="${c.id}">削除</button></div></div>`;
+  }).join('') : '<p class="muted">候補はまだありません</p>';
+  $('candSummary').textContent = `${list.length}件` + (cnt ? ` ／ 想定利益合計 ${yen(sum)}` : '');
+}
+$('candList').addEventListener('click', ev => {
+  const ed = ev.target.dataset.edit, dl = ev.target.dataset.cdel;
+  if (ed) {
+    const c = data.candidates.find(x => x.id === ed);
+    for (const [k, id] of Object.entries(candFields)) $(id).value = c[k] ?? '';
+    $('cId').value = c.id; $('candFormTitle').textContent = '候補を編集'; updateCalc(); window.scrollTo(0, 0);
+  }
+  if (dl && confirm('この候補を削除しますか？')) {
+    data.candidates = data.candidates.filter(x => x.id !== dl); data.deleted[dl] = now(); persist(); renderCands();
+  }
+});
+
+// ---------- settings / share ----------
+function fillSettings() { $('sRate').value = data.settings.rate; $('sFixed').value = data.settings.fixed; $('sShip').value = data.settings.ship; }
+$('sSave').addEventListener('click', () => {
+  data.settings = { rate: Number($('sRate').value) || 0, fixed: Number($('sFixed').value) || 0, ship: Number($('sShip').value) || 0 };
+  persist(); updateCalc(); toast('設定を保存しました');
+});
+$('sDefault').addEventListener('click', () => { data.settings = { ...DEFAULT_SETTINGS }; persist(); fillSettings(); updateCalc(); toast('初期値に戻しました'); });
+$('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ app:'bond-shiire', version:1, exportedAt: now(), ...data }, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `bond-shiire-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('importFile').addEventListener('change', async ev => {
+  const file = ev.target.files[0]; if (!file) return;
+  try {
+    const inc = JSON.parse(await file.text());
+    if (inc.app !== 'bond-shiire') throw new Error('このアプリの書き出しファイルではありません');
+    if ($('importMode').value === 'replace') {
+      if (!confirm('今のデータを置き換えます。よろしいですか？')) return;
+      data = normalize(inc);
+    } else {
+      data = mergeData(data, inc);
+    }
+    persist(); fillSettings(); renderCands(); renderSaved(); toast(`読み込みました（候補${data.candidates.length}件）`);
+  } catch (err) { toast('読み込み失敗：' + err.message); }
+  ev.target.value = '';
+});
+
+fillSettings(); resetCandForm(); renderQueries(); renderCands(); renderSaved();
+</script>
+</body>
+</html>

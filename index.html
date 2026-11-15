@@ -282,7 +282,10 @@ document.querySelectorAll('nav button').forEach(b => b.addEventListener('click',
 }));
 
 // ---------- search ----------
+const SESSION_KEY = STORE_KEY + '.session';
 let session = { item:null, keywords:[], design:[], similar:[], manual:[], results:[], resultsMeta:'' };
+try { session = { ...session, ...(JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') || {}) }; } catch (e) {}
+const saveSession = () => { try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {} };
 let resSite = '';
 let enabledSites = new Set(JSON.parse(localStorage.getItem(STORE_KEY + '.sites') || 'null') || SITES.map(s => s.id));
 
@@ -325,7 +328,7 @@ document.querySelector('#tab-search').addEventListener('click', ev => {
     data.saved.unshift({ id: uid(), ja: q.ja || '', en: q.en || '', note: q.note || '', updatedAt: now() });
     persist(); toast('保存しました');
   }
-  if (d !== undefined) { session.manual.splice(+d, 1); renderQueries(); }
+  if (d !== undefined) { session.manual.splice(+d, 1); saveSession(); renderQueries(); }
 });
 
 function parseImport(text) {
@@ -393,19 +396,19 @@ $('resList').addEventListener('click', ev => {
 $('doImport').addEventListener('click', () => {
   try {
     const r = parseImport($('importCode').value);
-    session = { ...session, ...r };
+    session = { ...session, ...r }; saveSession();
     renderItem(); renderQueries(); renderResults();
     toast(r.results ? `取り込みました（結果${r.results.length}件）` : '取り込みました');
   } catch (err) { toast('取り込み失敗：' + err.message); }
 });
 $('clearImport').addEventListener('click', () => {
-  $('importCode').value = ''; session = { ...session, item:null, keywords:[], design:[], similar:[], results:[], resultsMeta:'' };
+  $('importCode').value = ''; session = { ...session, item:null, keywords:[], design:[], similar:[], results:[], resultsMeta:'' }; saveSession();
   renderItem(); renderQueries(); renderResults();
 });$('copyPrompt').addEventListener('click', async () => toast(await copyText(AI_PROMPT) ? '依頼文をコピーしました' : 'コピーできませんでした'));
 $('addManual').addEventListener('click', () => {
   const ja = $('manJa').value.trim(), en = $('manEn').value.trim();
   if (!ja && !en) return toast('ワードを入力してください');
-  session.manual.unshift({ ja, en, note:'' }); $('manJa').value = ''; $('manEn').value = ''; renderQueries();
+  session.manual.unshift({ ja, en, note:'' }); $('manJa').value = ''; $('manEn').value = ''; saveSession(); renderQueries();
 });
 $('itemToCand').addEventListener('click', () => {
   const it = session.item || {};
@@ -527,7 +530,7 @@ $('importFile').addEventListener('change', async ev => {
   ev.target.value = '';
 });
 
-fillSettings(); resetCandForm(); renderQueries(); renderCands(); renderSaved();
+fillSettings(); resetCandForm(); renderItem(); renderQueries(); renderResults(); renderCands(); renderSaved();
 </script>
 </body>
 </html>

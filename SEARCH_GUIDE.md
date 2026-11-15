@@ -23,7 +23,11 @@
 
 「仕入れ検索」の代わりに「仕入れ先検索」と送っても同じです。
 
-最初の依頼では、このファイルの場所も伝えます：`C:\Users\advke\OneDrive\BondVintage_Shiire_App\SEARCH_GUIDE.md`
+最初の依頼では、このファイルの場所も伝えます：
+- PCのチャット：`C:\Users\advke\OneDrive\BondVintage_Shiire_App\SEARCH_GUIDE.md`
+- スマホなどほかの端末：`https://github.com/painintheass88971-ui/bond-shiire/blob/main/SEARCH_GUIDE.md`
+
+**ブラウザを操作できないチャット**（スマホのチャットなど）では、各サイトの巡回ができません。その場合は、`results` を含まない判別と検索語だけの取込コードを返します。そのうえで「出品の一覧が必要なら、PCのチャットで同じ画像を貼って『仕入れ検索』と送ってください」と伝えます。
 （アプリの「AIへの依頼文をコピー」で、この文をコピーできます）
 
 ## 段階的な検索（25件ずつ）

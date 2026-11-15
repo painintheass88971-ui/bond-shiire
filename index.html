@@ -205,10 +205,8 @@ const SITES = [
   { id:'grailed', name:'Grailed', lang:'en', url:q=>`https://www.grailed.com/shop?query=${e(q)}` },
 ];
 
-const AI_PROMPT = `【BOND仕入れ用】この画像のアイテムを判別して、仕入れアプリ用の取込コード（JSON）を出してください。
-形式：{"item":{"name":"","brand":"","category":"","era":"","details":"","checkpoints":""},"keywords":[{"ja":"","en":"","note":""}],"design":[{"ja":"","en":"","note":""}],"similar":[{"ja":"","en":"","note":""}],"results":[{"site":"","title":"","price":"","image":"","url":"","match":""}]}
-keywords＝同じアイテムを探す検索語、design＝ブランド名を入れずデザインの共通点だけで探す検索語、similar＝似通った狙い目アイテムの検索語（各3〜5個）。
-results＝各サイトを実際に検索し、デザインが似ている出品を選んだ一覧（画像URL・価格・リンク・似ている理由）。`;
+const AI_PROMPT = `仕入れ検索
+C:\\Users\\advke\\OneDrive\\BondVintage_Shiire_App\\SEARCH_GUIDE.md の手順で、この画像の取込コード（1回目の25件）を出してください。`;
 
 // ---------- data ----------
 function emptyData() { return { settings:{...DEFAULT_SETTINGS}, saved:[], candidates:[], deleted:{} }; }
@@ -347,6 +345,7 @@ function parseImport(text) {
       site:str(r.site), title:str(r.title), price:str(r.price), image:safeUrl(str(r.image)), url:safeUrl(str(r.url)), match:str(r.match),
     })).filter(r => r.title || r.url);
     res.resultsMeta = str(d.resultsMeta || d.searchedAt);
+    res.append = Number(d.batch) > 1;
   }
   if (!Object.keys(res).length) throw new Error('取り込める項目がありません');
   return res;
@@ -396,9 +395,17 @@ $('resList').addEventListener('click', ev => {
 $('doImport').addEventListener('click', () => {
   try {
     const r = parseImport($('importCode').value);
-    session = { ...session, ...r }; saveSession();
+    const { append, ...rest } = r;
+    let added = r.results ? r.results.length : 0;
+    if (append) {
+      const seen = new Set(session.results.map(x => x.url));
+      rest.results = r.results.filter(x => !x.url || !seen.has(x.url));
+      added = rest.results.length;
+      rest.results = session.results.concat(rest.results);
+    }
+    session = { ...session, ...rest }; saveSession();
     renderItem(); renderQueries(); renderResults();
-    toast(r.results ? `取り込みました（結果${r.results.length}件）` : '取り込みました');
+    toast(!r.results ? '取り込みました' : append ? `追加しました（+${added}件・合計${session.results.length}件）` : `取り込みました（結果${added}件）`);
   } catch (err) { toast('取り込み失敗：' + err.message); }
 });
 $('clearImport').addEventListener('click', () => {

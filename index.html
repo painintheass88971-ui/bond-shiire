@@ -66,7 +66,9 @@
 <section class="tab on" id="tab-search">
   <div class="card">
     <h2>① 画像の判別結果を取り込む</h2>
-    <p class="muted">チャットに商品画像を送り、返ってきた「取込コード」を貼り付けてください。</p>
+    <p class="muted">チャットで「$仕入れ先検索」をすると、結果が自動で保存されます。下のボタンで、どの端末でも読み込めます（アプリを開いたときにも自動で確認します）。</p>
+    <div class="btns" style="margin-top:0"><button class="btn" id="loadLatest">最新の検索結果を読み込む</button></div>
+    <p class="muted">コードを直接もらった場合は、ここに貼り付けてください。</p>
     <div class="btns" style="margin-top:0"><button class="btn ghost small" id="copyPrompt">AIへの依頼文をコピー</button></div>
     <textarea id="importCode" placeholder='{"item":{...},"keywords":[...],"similar":[...]}'></textarea>
     <div class="btns"><button class="btn" id="doImport">取り込む</button><button class="btn ghost" id="clearImport">クリア</button></div>
@@ -205,8 +207,8 @@ const SITES = [
   { id:'grailed', name:'Grailed', lang:'en', url:q=>`https://www.grailed.com/shop?query=${e(q)}` },
 ];
 
-const AI_PROMPT = `仕入れ検索
-https://github.com/painintheass88971-ui/bond-shiire/blob/main/SEARCH_GUIDE.md の手順で、この画像の取込コード（1回目の25件）を出してください。`;
+const AI_PROMPT = `$仕入れ先検索
+https://github.com/painintheass88971-ui/bond-shiire/blob/main/SEARCH_GUIDE.md の手順で、この画像を検索してください（1回目の25件）。`;
 
 // ---------- data ----------
 function emptyData() { return { settings:{...DEFAULT_SETTINGS}, saved:[], candidates:[], deleted:{} }; }
@@ -408,6 +410,22 @@ $('doImport').addEventListener('click', () => {
     toast(!r.results ? '取り込みました' : append ? `追加しました（+${added}件・合計${session.results.length}件）` : `取り込みました（結果${added}件）`);
   } catch (err) { toast('取り込み失敗：' + err.message); }
 });
+const LATEST_SEEN_KEY = STORE_KEY + '.latestSeen';
+async function loadLatest(auto) {
+  try {
+    const res = await fetch('results/latest.json?t=' + Date.now(), { cache:'no-store' });
+    if (!res.ok) throw new Error(res.status === 404 ? 'まだ保存された結果がありません' : 'HTTP ' + res.status);
+    const text = await res.text();
+    const savedAt = String(JSON.parse(text).savedAt || '');
+    if (auto && (!savedAt || savedAt === localStorage.getItem(LATEST_SEEN_KEY))) return;
+    const { append, ...rest } = parseImport(text);
+    session = { ...session, item:null, keywords:[], design:[], similar:[], results:[], resultsMeta:'', ...rest }; saveSession();
+    localStorage.setItem(LATEST_SEEN_KEY, savedAt);
+    renderItem(); renderQueries(); renderResults();
+    toast(`最新の検索結果を読み込みました（${session.results.length}件）`);
+  } catch (err) { if (!auto) toast('読み込み失敗：' + err.message); }
+}
+$('loadLatest').addEventListener('click', () => loadLatest(false));
 $('clearImport').addEventListener('click', () => {
   $('importCode').value = ''; session = { ...session, item:null, keywords:[], design:[], similar:[], results:[], resultsMeta:'' }; saveSession();
   renderItem(); renderQueries(); renderResults();
@@ -538,6 +556,7 @@ $('importFile').addEventListener('change', async ev => {
 });
 
 fillSettings(); resetCandForm(); renderItem(); renderQueries(); renderResults(); renderCands(); renderSaved();
+if (location.protocol.startsWith('http')) loadLatest(true);
 </script>
 </body>
 </html>
